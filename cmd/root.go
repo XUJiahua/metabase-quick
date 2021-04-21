@@ -57,9 +57,110 @@ var rootCmd = &cobra.Command{
 
 		// metabase server
 		router := gin.Default()
+		apiGroup := router.Group("/api")
+		const contentType = "application/json;charset=utf-8"
+		{
+			apiGroup.GET("/database", func(c *gin.Context) {
+				res := `
+[
+    {
+        "description": null,
+        "features": [
+            "basic-aggregations",
+            "standard-deviation-aggregations",
+            "expression-aggregations",
+            "foreign-keys",
+            "right-join",
+            "left-join",
+            "native-parameters",
+            "nested-queries",
+            "expressions",
+            "case-sensitivity-string-filter-options",
+            "binning",
+            "inner-join",
+            "advanced-math-expressions"
+        ],
+        "cache_field_values_schedule": "0 0 9 * * ? *",
+        "timezone": "UTC",
+        "auto_run_queries": true,
+        "metadata_sync_schedule": "0 38 * * * ? *",
+        "name": "Sample Dataset",
+        "caveats": null,
+        "is_full_sync": true,
+        "updated_at": "2021-04-21T02:43:59.167",
+        "native_permissions": "write",
+        "details": {
+            "db": "/Users/jiahua/opensource/metabase/resources/sample-dataset.db;USER=GUEST;PASSWORD=guest"
+        },
+        "is_sample": true,
+        "id": 1,
+        "is_on_demand": false,
+        "options": null,
+        "engine": "h2",
+        "refingerprint": null,
+        "created_at": "2021-04-20T05:02:06.893",
+        "points_of_interest": null
+    }
+]`
+				c.Data(200, contentType, []byte(res))
+			})
+			apiGroup.GET("/database/1/schemas", func(c *gin.Context) {
+				res := `
+["PUBLIC"]
+`
+				c.Data(200, contentType, []byte(res))
+			})
+
+			apiGroup.GET("database/1/schema/PUBLIC", func(c *gin.Context) {
+				res := `
+[
+    {
+        "description": "This is a confirmed order for a product from a user.",
+        "entity_type": "entity/TransactionTable",
+        "schema": "PUBLIC",
+        "show_in_getting_started": false,
+        "name": "ORDERS",
+        "caveats": null,
+        "updated_at": "2021-04-21T07:38:00.493",
+        "entity_name": null,
+        "active": true,
+        "id": 2,
+        "db_id": 1,
+        "visibility_type": null,
+        "field_order": "database",
+        "display_name": "Orders",
+        "created_at": "2021-04-20T05:02:07.618",
+        "points_of_interest": null
+    },
+    {
+        "description": "This is our product catalog. It includes all products ever sold by the Sample Company.",
+        "entity_type": "entity/ProductTable",
+        "schema": "PUBLIC",
+        "show_in_getting_started": false,
+        "name": "PRODUCTS",
+        "caveats": null,
+        "updated_at": "2021-04-21T07:38:00.551",
+        "entity_name": null,
+        "active": true,
+        "id": 1,
+        "db_id": 1,
+        "visibility_type": null,
+        "field_order": "database",
+        "display_name": "Products",
+        "created_at": "2021-04-20T05:02:07.606",
+        "points_of_interest": null
+    }
+]
+`
+				c.Data(200, contentType, []byte(res))
+			})
+
+		}
+
 		// reverse proxy to metabase server
 		router.NoRoute(ReverseProxy())
-		router.Run(":8000")
+		port, _ := os.LookupEnv("PORT")
+		router.Run(fmt.Sprintf(":%s", port))
 
 		// sql server
 		s, err := sqldb.New(sqlServerAddr)
