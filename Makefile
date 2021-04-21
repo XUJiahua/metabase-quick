@@ -1,4 +1,4 @@
 fmt:
 	go fmt ./...
 run:fmt
-	go run . dataset/rb.csv
+	go run . dataset/iris.csv dataset/rb.csv

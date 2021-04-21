@@ -6,7 +6,10 @@ import (
 	"github.com/dolthub/go-mysql-server/memory"
 	"github.com/dolthub/go-mysql-server/server"
 	"github.com/dolthub/go-mysql-server/sql"
-	"time"
+	"github.com/go-gota/gota/dataframe"
+	"github.com/go-gota/gota/series"
+	"github.com/xujiahua/csvvisual/pkg/util"
+	"os"
 )
 
 type Server struct {
@@ -19,6 +22,7 @@ type Server struct {
 const defaultDBName = "default"
 const defaultDBUser = "root"
 const defaultDBPass = ""
+const defaultDBAddr = "localhost:3306"
 
 func New(addr string) (*Server, error) {
 	defaultDB := memory.NewDatabase(defaultDBName)
@@ -26,6 +30,9 @@ func New(addr string) (*Server, error) {
 	engine := sqle.NewDefault()
 	engine.AddDatabase(defaultDB)
 
+	if addr == "" {
+		addr = defaultDBAddr
+	}
 	config := server.Config{
 		Protocol: "tcp",
 		Address:  addr,
@@ -42,32 +49,48 @@ func New(addr string) (*Server, error) {
 	}, nil
 }
 
-func (s *Server) ImportTable() {
-	const (
-		// TODO: table name is filename
-		tableName = "mytable"
-	)
-	// TODO: schema inferred from?
-	table := memory.NewTable(tableName, sql.Schema{
-		{Name: "name", Type: sql.Text, Nullable: false, Source: tableName},
-		{Name: "email", Type: sql.Text, Nullable: false, Source: tableName},
-		{Name: "phone_numbers", Type: sql.JSON, Nullable: false, Source: tableName},
-		{Name: "created_at", Type: sql.Timestamp, Nullable: false, Source: tableName},
-	})
+var typeMapping = map[series.Type]sql.Type{
+	series.String: sql.Text,
+	series.Int:    sql.Int64,
+	series.Float:  sql.Float64,
+	series.Bool:   sql.Boolean,
+}
 
+func (s *Server) ImportTable(filename string, hasHeader bool) error {
+	tableName := util.GetFilenameWithExt(filename)
+
+	file, err := os.Open(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// schema inferred from dataframe package
+	dataFrame := dataframe.ReadCSV(file, dataframe.HasHeader(hasHeader))
+	var schema sql.Schema
+	for _, colName := range dataFrame.Names() {
+		schema = append(schema, &sql.Column{
+			Name:     colName,
+			Type:     typeMapping[dataFrame.Col(colName).Type()],
+			Nullable: true,
+			Source:   tableName,
+		})
+	}
+	// attach to default db
+	table := memory.NewTable(tableName, schema)
 	s.defaultDB.AddTable(tableName, table)
 
 	ctx := sql.NewEmptyContext()
-	rows := []sql.Row{
-		sql.NewRow("John Doe", "john@doe.com", []string{"555-555-555"}, time.Now()),
-		sql.NewRow("John Doe", "johnalt@doe.com", []string{}, time.Now()),
-		sql.NewRow("Jane Doe", "jane@doe.com", []string{}, time.Now()),
-		sql.NewRow("Evil Bob", "evilbob@gmail.com", []string{"555-666-555", "666-666-666"}, time.Now()),
-	}
-	for _, row := range rows {
-		err := table.Insert(ctx, row)
+	for i := 0; i < dataFrame.Nrow(); i++ {
+		var row []interface{}
+		for _, colName := range dataFrame.Names() {
+			row = append(row, dataFrame.Col(colName).Elem(i).Val())
+		}
+		err := table.Insert(ctx, sql.NewRow(row...))
 		if err != nil {
-			return
+			return err
 		}
 	}
+
+	return nil
 }

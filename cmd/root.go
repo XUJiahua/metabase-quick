@@ -24,7 +24,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/spf13/cobra"
-	"github.com/xujiahua/csvvisual/pkg"
+	"github.com/xujiahua/csvvisual/pkg/sqldb"
 	"os"
 
 	homedir "github.com/mitchellh/go-homedir"
@@ -32,6 +32,7 @@ import (
 )
 
 var cfgFile string
+var sqlServerAddr string
 var hasHeader bool
 
 // rootCmd represents the base command when called without any subcommands
@@ -47,12 +48,25 @@ to quickly create a Cobra application.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) != 1 {
+		if len(args) == 0 {
 			fmt.Println("expect dataset filename")
 			return
 		}
-		filename := args[0]
-		pkg.Load(filename, hasHeader)
+		s, err := sqldb.New(sqlServerAddr)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		for _, filename := range args {
+			err = s.ImportTable(filename, hasHeader)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+		}
+		err = s.Start()
+		fmt.Println(err)
+		return
 	},
 }
 
@@ -73,11 +87,12 @@ func init() {
 	// will be global for your application.
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.csvvisual.yaml)")
-	rootCmd.PersistentFlags().BoolVarP(&hasHeader, "hasheader", "i", true, "")
+	rootCmd.PersistentFlags().StringVarP(&sqlServerAddr, "sqlServerAddr", "s", "localhost:3306", "the address sql server will listen")
+	rootCmd.PersistentFlags().BoolVarP(&hasHeader, "hasHeader", "i", true, "indicate if csv has header row")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	//rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 // initConfig reads in config file and ENV variables if set.

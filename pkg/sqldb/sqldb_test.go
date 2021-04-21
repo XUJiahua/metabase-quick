@@ -8,7 +8,8 @@ import (
 func TestNew(t *testing.T) {
 	s, err := New("localhost:3306")
 	assert.Equal(t, nil, err)
-	s.ImportTable()
+	err = s.ImportTable("/Users/jiahua/goworkshop/csvvisual/dataset/iris.csv", true)
+	assert.Equal(t, nil, err)
 	err = s.Start()
 	assert.Equal(t, nil, err)
 }
