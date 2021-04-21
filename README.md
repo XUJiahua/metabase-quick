@@ -14,11 +14,21 @@ But I have to do a lot of work for setting up Metabase: create account, create d
 
 I will build it using Go so that it can easily run on Windows, MacOS, Linux.
 
+### Built-in SQL DB engine
+
+No need to setup a standalone database, e.g., MySQL.
+
 ## WIP
 
-- [x] import local csv files into local in-memory sql engine, and serving
+- [x] import local csv files into local in-memory sql engine tables, and serving, based on project https://github.com/dolthub/go-mysql-server
 - [ ] simplify metabase frontend, do a lot
 - [ ] go server: mock metabase key api logic, the hardest... 
+
+### TODO
+
+- [ ] infer more column type， now based on project https://github.com/go-gota/gota with limited column types supported
+- [ ] db engine for handling bigger dataset
+
 
 ## Dev Setup
 
