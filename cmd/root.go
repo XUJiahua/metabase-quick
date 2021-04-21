@@ -39,8 +39,8 @@ var debug bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "csvvisual",
-	Short: "visualize csv file",
+	Use:   "metabase-quick",
+	Short: "visualize local csv via metabase quickly",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		if debug {
@@ -85,7 +85,6 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.csvvisual.yaml)")
 	rootCmd.PersistentFlags().StringVarP(&sqlServerAddr, "sqlServerAddr", "s", "localhost:3306", "the address sql server will listen")
 	rootCmd.PersistentFlags().BoolVarP(&hasHeader, "hasHeader", "i", true, "indicate if csv has header row")
 	rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "debug mode")
@@ -108,9 +107,9 @@ func initConfig() {
 			os.Exit(1)
 		}
 
-		// Search config in home directory with name ".csvvisual" (without extension).
+		// Search config in home directory with name ".metabase-quick" (without extension).
 		viper.AddConfigPath(home)
-		viper.SetConfigName(".csvvisual")
+		viper.SetConfigName(".metabase-quick")
 	}
 
 	viper.AutomaticEnv() // read in environment variables that match
