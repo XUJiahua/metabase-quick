@@ -8,8 +8,10 @@ import (
 	"github.com/dolthub/go-mysql-server/sql"
 	"github.com/go-gota/gota/dataframe"
 	"github.com/go-gota/gota/series"
-	"github.com/xujiahua/csvvisual/pkg/util"
+	"github.com/sirupsen/logrus"
+	"github.com/xujiahua/metabase-quick/pkg/util"
 	"os"
+	"time"
 )
 
 type Server struct {
@@ -57,6 +59,10 @@ var typeMapping = map[series.Type]sql.Type{
 }
 
 func (s *Server) ImportTable(filename string, hasHeader bool) error {
+	begin := time.Now()
+	defer func() {
+		logrus.Infof("load file %s in %v seconds", filename, time.Now().Sub(begin).Seconds())
+	}()
 	tableName := util.GetFilenameWithExt(filename)
 
 	file, err := os.Open(filename)
@@ -81,12 +87,16 @@ func (s *Server) ImportTable(filename string, hasHeader bool) error {
 	s.defaultDB.AddTable(tableName, table)
 
 	ctx := sql.NewEmptyContext()
+	//inserter := table.Inserter(ctx)
+	//defer inserter.Close(ctx)
 	for i := 0; i < dataFrame.Nrow(); i++ {
 		var row []interface{}
 		for _, colName := range dataFrame.Names() {
 			row = append(row, dataFrame.Col(colName).Elem(i).Val())
 		}
-		err := table.Insert(ctx, sql.NewRow(row...))
+		// TODO: insert is time consuming
+		//err = inserter.Insert(ctx, sql.NewRow(row...))
+		err = table.Insert(ctx, sql.NewRow(row...))
 		if err != nil {
 			return err
 		}

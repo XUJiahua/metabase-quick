@@ -21,7 +21,7 @@ THE SOFTWARE.
 */
 package main
 
-import "github.com/xujiahua/csvvisual/cmd"
+import "github.com/xujiahua/metabase-quick/cmd"
 
 func main() {
 	cmd.Execute()
