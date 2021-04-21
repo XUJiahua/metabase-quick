@@ -84,6 +84,7 @@ func (s *Server) ImportTable(filename string, hasHeader bool) error {
 	}
 	// attach to default db
 	table := memory.NewTable(tableName, schema)
+	// TODO: maybe duplicate table name
 	s.defaultDB.AddTable(tableName, table)
 
 	ctx := sql.NewEmptyContext()

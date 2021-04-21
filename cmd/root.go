@@ -23,9 +23,12 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/xujiahua/metabase-quick/pkg/sqldb"
+	"net/http"
+	"net/http/httputil"
 	"os"
 
 	homedir "github.com/mitchellh/go-homedir"
@@ -51,6 +54,14 @@ var rootCmd = &cobra.Command{
 			fmt.Println("expect dataset filename")
 			return
 		}
+
+		// metabase server
+		router := gin.Default()
+		// reverse proxy to metabase server
+		router.NoRoute(ReverseProxy())
+		router.Run(":8000")
+
+		// sql server
 		s, err := sqldb.New(sqlServerAddr)
 		if err != nil {
 			fmt.Println(err)
@@ -67,6 +78,22 @@ var rootCmd = &cobra.Command{
 		fmt.Println(err)
 		return
 	},
+}
+
+func ReverseProxy() gin.HandlerFunc {
+	target := "localhost:3000"
+
+	return func(c *gin.Context) {
+		director := func(req *http.Request) {
+			req.URL.Scheme = "http"
+			req.URL.Host = target
+			//req.Header["my-header"] = []string{r.Header.Get("my-header")}
+			//// Golang camelcases headers
+			//delete(req.Header, "My-Header")
+		}
+		proxy := &httputil.ReverseProxy{Director: director}
+		proxy.ServeHTTP(c.Writer, c.Request)
+	}
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

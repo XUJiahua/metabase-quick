@@ -4,6 +4,8 @@ go 1.16
 
 require (
 	github.com/dolthub/go-mysql-server v0.9.0
+	github.com/gin-contrib/cors v1.3.1 // indirect
+	github.com/gin-gonic/gin v1.7.1 // indirect
 	github.com/go-gota/gota v0.10.1
 	github.com/magiconair/properties v1.8.1
 	github.com/mitchellh/go-homedir v1.1.0
