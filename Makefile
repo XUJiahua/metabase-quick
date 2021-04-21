@@ -5,7 +5,7 @@ run:fmt
 # golang project hot reload, using gin
 # go get github.com/codegangsta/gin
 run-hot:fmt
-	gin -p 8000 -a 8001 run main.go dataset/ml-latest-small/movies.csv dataset/ml-latest-small/tags.csv
+	gin -p 8000 run main.go dataset/ml-latest-small/movies.csv dataset/ml-latest-small/tags.csv
 # use default;
 # show tables;
 # join test
