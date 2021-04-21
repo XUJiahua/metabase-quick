@@ -2,6 +2,8 @@ fmt:
 	go fmt ./...
 run:fmt
 	go run . dataset/ml-latest-small/movies.csv dataset/ml-latest-small/tags.csv
+# golang project hot reload, using gin
+# go get github.com/codegangsta/gin
 run-hot:fmt
 	gin -p 8000 -a 8001 run main.go dataset/ml-latest-small/movies.csv dataset/ml-latest-small/tags.csv
 # use default;
