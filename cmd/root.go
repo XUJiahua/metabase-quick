@@ -111,7 +111,7 @@ var rootCmd = &cobra.Command{
 				c.Data(200, contentType, []byte(res))
 			})
 
-			apiGroup.GET("database/1/schema/PUBLIC", func(c *gin.Context) {
+			apiGroup.GET("/database/1/schema/PUBLIC", func(c *gin.Context) {
 				res := `
 [
     {
@@ -155,6 +155,11 @@ var rootCmd = &cobra.Command{
 				c.Data(200, contentType, []byte(res))
 			})
 
+			// TODO: ??? 有必要???
+			apiGroup.GET("/table/:id/query_metadata", func(c *gin.Context) {
+				id := c.Param("id")
+				logrus.Infof(id)
+			})
 		}
 
 		// reverse proxy to metabase server
