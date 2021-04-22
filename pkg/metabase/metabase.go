@@ -61,7 +61,7 @@ func (s Server) Start() error {
 			}
 			spew.Dump(request.Native.Query)
 
-			rows, columns, err := s.sqlClient.RowsAndCols(request.Native.Query)
+			rows, columns, err := s.sqlClient.Query(request.Native.Query)
 			if err != nil {
 				logrus.Error(err)
 				return

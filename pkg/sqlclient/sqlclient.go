@@ -85,7 +85,7 @@ func toMetabaseType(typ string) string {
 	return ""
 }
 
-func (c Client) RowsAndCols(query string) ([][]interface{}, []*model.Column, error) {
+func (c Client) Query(query string) ([][]interface{}, []*model.Column, error) {
 	rows, err := c.db.Query(query)
 	if err != nil {
 		return nil, nil, err
@@ -111,6 +111,8 @@ func (c Client) RowsAndCols(query string) ([][]interface{}, []*model.Column, err
 	for rows.Next() {
 		values := make([]interface{}, nCol)
 		for i, columnType := range columnTypes {
+			// ScanType() supported in mysql:
+			// https://github.com/go-sql-driver/mysql/blob/master/fields.go#L101
 			values[i] = reflect.New(columnType.ScanType()).Interface()
 		}
 
@@ -120,9 +122,19 @@ func (c Client) RowsAndCols(query string) ([][]interface{}, []*model.Column, err
 		}
 
 		for i := range columnTypes {
+			// unwrap the value if type is sql.NullBool/...
 			if valuer, ok := values[i].(driver.Valuer); ok {
 				values[i], _ = valuer.Value()
+			} else if bs, ok := values[i].(*sql.RawBytes); ok {
+				// nilness check
+				if bs == nil {
+					values[i] = nil
+				} else {
+					// treat as string
+					values[i] = string(*bs)
+				}
 			}
+			// otherwise, keep values[i] with no change
 		}
 
 		_rows = append(_rows, values)
