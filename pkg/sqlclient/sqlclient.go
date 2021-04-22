@@ -2,9 +2,11 @@ package sqlclient
 
 import (
 	"database/sql"
+	"database/sql/driver"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/xujiahua/metabase-quick/pkg/metabase/model"
+	"reflect"
 )
 
 type Client struct {
@@ -27,8 +29,7 @@ func New(dbAddr, user, pass, dbName string) (*Client, error) {
 
 // reference metabase code
 //(defmethod sql-jdbc.sync/database-type->base-type :mysql
-//[_ database-type]
-//({:BIGINT     :type/BigInteger
+//    :BIGINT     :type/BigInteger
 //    :INT        :type/Integer
 //    :INTEGER    :type/Integer
 //    :MEDIUMINT  :type/Integer
@@ -46,7 +47,7 @@ func New(dbAddr, user, pass, dbName string) (*Client, error) {
 //    :TINYTEXT   :type/Text
 //    :VARCHAR    :type/Text
 //    :MEDIUMTEXT :type/Text
-//:BINARY     :type/*
+//    :BINARY     :type/*
 //    :BLOB       :type/*
 //    :LONGBLOB   :type/*
 //    :MEDIUMBLOB :type/*
@@ -54,13 +55,11 @@ func New(dbAddr, user, pass, dbName string) (*Client, error) {
 //    :SET        :type/*
 //    :TINYBLOB   :type/*
 //    :VARBINARY  :type/*
-//    :TIME       :type/Time
+//    :DATE       :type/Date
+//    :YEAR       :type/Date
 //    :TIMESTAMP  :type/DateTimeWithLocalTZ ; stored as UTC in the database
 //    :DATETIME   :type/DateTime
-//    :DATE       :type/Date
-//    :YEAR       :type/Date}
-//   ;; strip off " UNSIGNED" from end if present
-//   (keyword (str/replace (name database-type) #"\sUNSIGNED$" ""))))
+//    :TIME       :type/Time
 
 // mysql datatype in go driver
 // https://github.com/go-sql-driver/mysql/blob/46351a8892976898935f653f5333782579a96fa5/fields.go#L16
@@ -112,22 +111,18 @@ func (c Client) RowsAndCols(query string) ([][]interface{}, []*model.Column, err
 	for rows.Next() {
 		values := make([]interface{}, nCol)
 		for i, columnType := range columnTypes {
-			switch columnType.DatabaseTypeName() {
-			case "VARCHAR", "NVARCHAR", "VARCHAR2", "CHAR", "TEXT":
-				values[i] = new(string)
-			case "DECIMAL":
-				values[i] = new(float64)
-			case "SMALLINT", "INT", "BIGINT":
-				values[i] = new(int64)
-			case "BOOL":
-				values[i] = new(bool)
-			default:
-				values[i] = new(string)
-			}
+			values[i] = reflect.New(columnType.ScanType()).Interface()
 		}
+
 		err = rows.Scan(values...)
 		if err != nil {
 			return nil, nil, err
+		}
+
+		for i := range columnTypes {
+			if valuer, ok := values[i].(driver.Valuer); ok {
+				values[i], _ = valuer.Value()
+			}
 		}
 
 		_rows = append(_rows, values)
