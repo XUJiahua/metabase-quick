@@ -1,0 +1,9 @@
+{
+  "type": "native",
+  "native": {
+    "query": "select USER_ID, count(1)\nfrom ORDERS\ngroup by USER_ID\norder by 2 desc\nlimit 10",
+    "template-tags": {}
+  },
+  "database": 1,
+  "parameters": []
+}

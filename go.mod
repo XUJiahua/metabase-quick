@@ -3,6 +3,7 @@ module github.com/xujiahua/metabase-quick
 go 1.16
 
 require (
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dolthub/go-mysql-server v0.9.0
 	github.com/gin-gonic/gin v1.7.1
 	github.com/go-gota/gota v0.10.1

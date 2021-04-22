@@ -23,12 +23,10 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/xujiahua/metabase-quick/pkg/metabase"
 	"github.com/xujiahua/metabase-quick/pkg/sqldb"
-	"net/http"
-	"net/http/httputil"
 	"os"
 
 	homedir "github.com/mitchellh/go-homedir"
@@ -38,7 +36,7 @@ import (
 var cfgFile string
 var sqlServerAddr string
 var hasHeader bool
-var debug bool
+var verbose bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -46,7 +44,7 @@ var rootCmd = &cobra.Command{
 	Short: "visualize local csv via metabase quickly",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		if debug {
+		if verbose {
 			logrus.SetLevel(logrus.DebugLevel)
 		}
 
@@ -55,147 +53,36 @@ var rootCmd = &cobra.Command{
 			return
 		}
 
-		// metabase server
-		router := gin.Default()
-		apiGroup := router.Group("/api")
-		const contentType = "application/json;charset=utf-8"
-		{
-			apiGroup.GET("/database", func(c *gin.Context) {
-				res := `
-[
-    {
-        "description": null,
-        "features": [
-            "basic-aggregations",
-            "standard-deviation-aggregations",
-            "expression-aggregations",
-            "foreign-keys",
-            "right-join",
-            "left-join",
-            "native-parameters",
-            "nested-queries",
-            "expressions",
-            "case-sensitivity-string-filter-options",
-            "binning",
-            "inner-join",
-            "advanced-math-expressions"
-        ],
-        "cache_field_values_schedule": "0 0 9 * * ? *",
-        "timezone": "UTC",
-        "auto_run_queries": true,
-        "metadata_sync_schedule": "0 38 * * * ? *",
-        "name": "Sample Dataset",
-        "caveats": null,
-        "is_full_sync": true,
-        "updated_at": "2021-04-21T02:43:59.167",
-        "native_permissions": "write",
-        "details": {
-            "db": "/Users/jiahua/opensource/metabase/resources/sample-dataset.db;USER=GUEST;PASSWORD=guest"
-        },
-        "is_sample": true,
-        "id": 1,
-        "is_on_demand": false,
-        "options": null,
-        "engine": "h2",
-        "refingerprint": null,
-        "created_at": "2021-04-20T05:02:06.893",
-        "points_of_interest": null
-    }
-]`
-				c.Data(200, contentType, []byte(res))
-			})
-			apiGroup.GET("/database/1/schemas", func(c *gin.Context) {
-				res := `
-["PUBLIC"]
-`
-				c.Data(200, contentType, []byte(res))
-			})
-
-			apiGroup.GET("/database/1/schema/PUBLIC", func(c *gin.Context) {
-				res := `
-[
-    {
-        "description": "This is a confirmed order for a product from a user.",
-        "entity_type": "entity/TransactionTable",
-        "schema": "PUBLIC",
-        "show_in_getting_started": false,
-        "name": "ORDERS",
-        "caveats": null,
-        "updated_at": "2021-04-21T07:38:00.493",
-        "entity_name": null,
-        "active": true,
-        "id": 2,
-        "db_id": 1,
-        "visibility_type": null,
-        "field_order": "database",
-        "display_name": "Orders",
-        "created_at": "2021-04-20T05:02:07.618",
-        "points_of_interest": null
-    },
-    {
-        "description": "This is our product catalog. It includes all products ever sold by the Sample Company.",
-        "entity_type": "entity/ProductTable",
-        "schema": "PUBLIC",
-        "show_in_getting_started": false,
-        "name": "PRODUCTS",
-        "caveats": null,
-        "updated_at": "2021-04-21T07:38:00.551",
-        "entity_name": null,
-        "active": true,
-        "id": 1,
-        "db_id": 1,
-        "visibility_type": null,
-        "field_order": "database",
-        "display_name": "Products",
-        "created_at": "2021-04-20T05:02:07.606",
-        "points_of_interest": null
-    }
-]
-`
-				c.Data(200, contentType, []byte(res))
-			})
-
-			// TODO: ??? 有必要???
-			apiGroup.GET("/table/:id/query_metadata", func(c *gin.Context) {
-				id := c.Param("id")
-				logrus.Infof(id)
-			})
-		}
-
-		// reverse proxy to metabase server
-		router.NoRoute(ReverseProxy())
-		port, _ := os.LookupEnv("PORT")
-		router.Run(fmt.Sprintf(":%s", port))
-
-		// sql server
+		// start sql server
 		s, err := sqldb.New(sqlServerAddr)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
+		handleErr(err)
+
+		var tables []string
 		for _, filename := range args {
-			err = s.ImportTable(filename, hasHeader)
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
+			// TODO: main in args
+			tableName, err := s.ImportTable(filename, hasHeader)
+			handleErr(err)
+
+			tables = append(tables, tableName)
 		}
-		err = s.Start()
-		fmt.Println(err)
-		return
+		go func() {
+			err := s.Start()
+			handleErr(err)
+		}()
+
+		server, err := metabase.New(&metabase.Metadata{
+			Database: s.DefaultDB.Name(),
+			Tables:   tables,
+		}, verbose)
+		handleErr(err)
+		handleErr(server.Start())
 	},
 }
 
-func ReverseProxy() gin.HandlerFunc {
-	target := "localhost:3000"
-
-	return func(c *gin.Context) {
-		director := func(req *http.Request) {
-			req.URL.Scheme = "http"
-			req.URL.Host = target
-		}
-		proxy := &httputil.ReverseProxy{Director: director}
-		proxy.ServeHTTP(c.Writer, c.Request)
+func handleErr(err error) {
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(2)
 	}
 }
 
@@ -217,7 +104,7 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVarP(&sqlServerAddr, "sqlServerAddr", "s", "localhost:3306", "the address sql server will listen")
 	rootCmd.PersistentFlags().BoolVarP(&hasHeader, "hasHeader", "i", true, "indicate if csv has header row")
-	rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "debug mode")
+	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", true, "show verbose logs")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.

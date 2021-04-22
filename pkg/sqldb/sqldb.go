@@ -16,7 +16,7 @@ import (
 
 type Server struct {
 	// default db that new imported table will attach
-	defaultDB *memory.Database
+	DefaultDB *memory.Database
 	// internal server
 	*server.Server
 }
@@ -46,7 +46,7 @@ func New(addr string) (*Server, error) {
 		return nil, err
 	}
 	return &Server{
-		defaultDB: defaultDB,
+		DefaultDB: defaultDB,
 		Server:    internalServer,
 	}, nil
 }
@@ -58,7 +58,7 @@ var typeMapping = map[series.Type]sql.Type{
 	series.Bool:   sql.Boolean,
 }
 
-func (s *Server) ImportTable(filename string, hasHeader bool) error {
+func (s *Server) ImportTable(filename string, hasHeader bool) (string, error) {
 	begin := time.Now()
 	defer func() {
 		logrus.Infof("load file %s in %v seconds", filename, time.Now().Sub(begin).Seconds())
@@ -67,7 +67,7 @@ func (s *Server) ImportTable(filename string, hasHeader bool) error {
 
 	file, err := os.Open(filename)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer file.Close()
 
@@ -85,7 +85,7 @@ func (s *Server) ImportTable(filename string, hasHeader bool) error {
 	// attach to default db
 	table := memory.NewTable(tableName, schema)
 	// TODO: maybe duplicate table name
-	s.defaultDB.AddTable(tableName, table)
+	s.DefaultDB.AddTable(tableName, table)
 
 	ctx := sql.NewEmptyContext()
 	//inserter := table.Inserter(ctx)
@@ -99,9 +99,9 @@ func (s *Server) ImportTable(filename string, hasHeader bool) error {
 		//err = inserter.Insert(ctx, sql.NewRow(row...))
 		err = table.Insert(ctx, sql.NewRow(row...))
 		if err != nil {
-			return err
+			return "", err
 		}
 	}
 
-	return nil
+	return tableName, nil
 }

@@ -1,0 +1,154 @@
+{
+  "data": {
+    "rows": [
+      [
+        2372,
+        46
+      ],
+      [
+        918,
+        45
+      ],
+      [
+        1352,
+        39
+      ],
+      [
+        65,
+        37
+      ],
+      [
+        1066,
+        37
+      ],
+      [
+        2052,
+        36
+      ],
+      [
+        2138,
+        36
+      ],
+      [
+        155,
+        36
+      ],
+      [
+        1593,
+        36
+      ],
+      [
+        2169,
+        35
+      ]
+    ],
+    "cols": [
+      {
+        "display_name": "USER_ID",
+        "source": "native",
+        "field_ref": [
+          "field-literal",
+          "USER_ID",
+          "type/Integer"
+        ],
+        "name": "USER_ID",
+        "base_type": "type/Integer"
+      },
+      {
+        "display_name": "COUNT(1)",
+        "source": "native",
+        "field_ref": [
+          "field-literal",
+          "COUNT(1)",
+          "type/BigInteger"
+        ],
+        "name": "COUNT(1)",
+        "base_type": "type/BigInteger"
+      }
+    ],
+    "native_form": {
+      "query": "select USER_ID, count(1)\nfrom ORDERS\ngroup by USER_ID\norder by 2 desc\nlimit 10",
+      "params": null
+    },
+    "results_timezone": "UTC",
+    "results_metadata": {
+      "checksum": "SfmrUsSzqRgvafLKgPjuGA==",
+      "columns": [
+        {
+          "name": "USER_ID",
+          "display_name": "USER_ID",
+          "base_type": "type/Integer",
+          "field_ref": [
+            "field-literal",
+            "USER_ID",
+            "type/Integer"
+          ],
+          "special_type": null,
+          "fingerprint": {
+            "global": {
+              "distinct-count": 10,
+              "nil%": 0.0
+            },
+            "type": {
+              "type/Number": {
+                "min": 65.0,
+                "q1": 918.0,
+                "q3": 2138.0,
+                "max": 2372.0,
+                "sd": 831.340016011633,
+                "avg": 1388.0
+              }
+            }
+          }
+        },
+        {
+          "name": "COUNT(1)",
+          "display_name": "COUNT(1)",
+          "base_type": "type/BigInteger",
+          "field_ref": [
+            "field-literal",
+            "COUNT(1)",
+            "type/BigInteger"
+          ],
+          "special_type": null,
+          "fingerprint": {
+            "global": {
+              "distinct-count": 6,
+              "nil%": 0.0
+            },
+            "type": {
+              "type/Number": {
+                "min": 35.0,
+                "q1": 35.86851709182133,
+                "q3": 39.0,
+                "max": 46.0,
+                "sd": 3.945461527713414,
+                "avg": 38.3
+              }
+            }
+          }
+        }
+      ]
+    },
+    "insights": null
+  },
+  "database_id": 1,
+  "started_at": "2021-04-22T08:28:47.956Z",
+  "json_query": {
+    "type": "native",
+    "native": {
+      "query": "select USER_ID, count(1)\nfrom ORDERS\ngroup by USER_ID\norder by 2 desc\nlimit 10",
+      "template-tags": {}
+    },
+    "database": 1,
+    "middleware": {
+      "js-int-to-string?": true,
+      "add-default-userland-constraints?": true
+    }
+  },
+  "average_execution_time": null,
+  "status": "completed",
+  "context": "ad-hoc",
+  "row_count": 10,
+  "running_time": 35
+}
