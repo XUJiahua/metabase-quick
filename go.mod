@@ -7,12 +7,11 @@ require (
 	github.com/dolthub/go-mysql-server v0.9.0
 	github.com/gin-gonic/gin v1.7.1
 	github.com/go-gota/gota v0.10.1
+	github.com/go-sql-driver/mysql v1.6.0
 	github.com/magiconair/properties v1.8.1
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/viper v1.7.1
 	gonum.org/v1/gonum v0.9.1 // indirect
-	gorm.io/driver/mysql v1.0.5
-	gorm.io/gorm v1.21.8
 )

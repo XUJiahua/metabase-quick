@@ -1,21 +1,21 @@
 package sqlclient
 
 import (
+	"database/sql"
 	"fmt"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/xujiahua/metabase-quick/pkg/metabase/model"
-	"gorm.io/driver/mysql"
-	"gorm.io/gorm"
 )
 
 type Client struct {
-	db *gorm.DB
+	db *sql.DB
 }
 
 func New(dbAddr, user, pass, dbName string) (*Client, error) {
 	// refer https://github.com/go-sql-driver/mysql#dsn-data-source-name for details
 	//dsn := "root:@tcp(127.0.0.1:3306)/default?charset=utf8mb4&parseTime=True&loc=Local"
 	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", user, pass, dbAddr, dbName)
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		return nil, err
 	}
@@ -26,7 +26,7 @@ func New(dbAddr, user, pass, dbName string) (*Client, error) {
 }
 
 func (c Client) RowsAndCols(query string) ([][]interface{}, []*model.Column, error) {
-	rows, err := c.db.Raw(query).Rows()
+	rows, err := c.db.Query(query)
 	if err != nil {
 		return nil, nil, err
 	}
