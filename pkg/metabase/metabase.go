@@ -1,6 +1,7 @@
 package metabase
 
 import (
+	"embed"
 	"encoding/json"
 	"fmt"
 	"github.com/davecgh/go-spew/spew"
@@ -8,11 +9,15 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/xujiahua/metabase-quick/pkg/metabase/model"
 	"github.com/xujiahua/metabase-quick/pkg/sqlclient"
+	"io/fs"
 	"net/http"
 	"net/http/httputil"
 	"os"
 	"time"
 )
+
+//go:embed frontend_client
+var staticFiles embed.FS
 
 type Metadata struct {
 	Database string
@@ -86,7 +91,12 @@ func (s Server) Start(dev bool) error {
 		r.PathPrefix("/").HandlerFunc(ReverseProxy("localhost:3000"))
 	} else {
 		// TODO: refresh on frontend generated url, 404
-		r.PathPrefix("/").Handler(http.StripPrefix("/", http.FileServer(http.Dir("./frontend_client"))))
+		staticFiles, err := fs.Sub(staticFiles, "frontend_client")
+		if err != nil {
+			panic(err)
+		}
+
+		r.PathPrefix("/").Handler(http.FileServer(http.FS(staticFiles)))
 	}
 
 	port, _ := os.LookupEnv("PORT")
