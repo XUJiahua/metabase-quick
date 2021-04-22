@@ -91,3 +91,23 @@ go-server:8000 -> metabase-server:3000
 
 visit backend:
 go-server:8000
+
+## Build
+
+in Metabase code repo 
+
+```
+yarn build
+```
+
+copy whole resources/frontend_client into pkg/metabase/frontend_client (metabase-quick code repo)
+
+
+replace pkg/metabase/frontend_client/index.html with index.html (metabase backend generated)
+
+Build metabase-quick (package frontend_client folder into go binary file)
+
+```
+go build
+```
+
