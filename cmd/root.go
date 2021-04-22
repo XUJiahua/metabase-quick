@@ -26,6 +26,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/xujiahua/metabase-quick/pkg/metabase"
+	"github.com/xujiahua/metabase-quick/pkg/sqlclient"
 	"github.com/xujiahua/metabase-quick/pkg/sqldb"
 	"os"
 
@@ -70,10 +71,15 @@ var rootCmd = &cobra.Command{
 			handleErr(err)
 		}()
 
+		// create sql client
+		client, err := sqlclient.New("127.0.0.1:3306", "root", "", "default")
+		handleErr(err)
+
+		// start metabase mock server
 		server, err := metabase.New(&metabase.Metadata{
 			Database: s.DefaultDB.Name(),
 			Tables:   tables,
-		}, verbose)
+		}, verbose, client)
 		handleErr(err)
 		handleErr(server.Start())
 	},

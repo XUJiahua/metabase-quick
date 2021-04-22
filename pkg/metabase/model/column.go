@@ -6,6 +6,7 @@ type Column struct {
 	BaseType    string      `json:"base_type"`
 	FieldRef    []string    `json:"field_ref"`
 	SpecialType interface{} `json:"special_type"`
+	Source      string      `json:"source"`
 	Fingerprint struct {
 		Global struct {
 			DistinctCount int     `json:"distinct-count"`

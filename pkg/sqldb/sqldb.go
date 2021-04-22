@@ -11,6 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/xujiahua/metabase-quick/pkg/util"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -58,6 +59,11 @@ var typeMapping = map[series.Type]sql.Type{
 	series.Bool:   sql.Boolean,
 }
 
+func simplifyName(name string) string {
+	name = strings.ToLower(name)
+	return strings.ReplaceAll(name, " ", "_")
+}
+
 func (s *Server) ImportTable(filename string, hasHeader bool) (string, error) {
 	begin := time.Now()
 	defer func() {
@@ -76,7 +82,7 @@ func (s *Server) ImportTable(filename string, hasHeader bool) (string, error) {
 	var schema sql.Schema
 	for _, colName := range dataFrame.Names() {
 		schema = append(schema, &sql.Column{
-			Name:     colName,
+			Name:     simplifyName(colName),
 			Type:     typeMapping[dataFrame.Col(colName).Type()],
 			Nullable: true,
 			Source:   tableName,

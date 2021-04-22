@@ -1,0 +1,16 @@
+package sqlclient
+
+import (
+	"github.com/davecgh/go-spew/spew"
+	"github.com/magiconair/properties/assert"
+	"testing"
+)
+
+func TestNew(t *testing.T) {
+	client, err := New("127.0.0.1:3306", "root", "", "default")
+	assert.Equal(t, nil, err)
+	rows, columns, err := client.RowsAndCols("select USER_ID, count(1) from ORDERS group by USER_ID order by 2 desc limit 10;")
+	assert.Equal(t, nil, err)
+	spew.Dump(rows)
+	spew.Dump(columns)
+}

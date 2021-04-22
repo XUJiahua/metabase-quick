@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"github.com/xujiahua/metabase-quick/pkg/metabase/model"
+	"github.com/xujiahua/metabase-quick/pkg/sqlclient"
 	"net/http"
 	"net/http/httputil"
 	"os"
@@ -18,9 +20,10 @@ type Metadata struct {
 // Server mock metabase server
 type Server struct {
 	Databases []*model.Database
+	sqlClient *sqlclient.Client
 }
 
-func New(metadata *Metadata, verbose bool) (*Server, error) {
+func New(metadata *Metadata, verbose bool, client *sqlclient.Client) (*Server, error) {
 	if verbose {
 		spew.Dump(metadata)
 	}
@@ -32,7 +35,10 @@ func New(metadata *Metadata, verbose bool) (*Server, error) {
 		database.AddTable(table, i)
 	}
 
-	return &Server{Databases: []*model.Database{database}}, nil
+	return &Server{
+		Databases: []*model.Database{database},
+		sqlClient: client,
+	}, nil
 }
 
 func (s Server) Start() error {
@@ -44,6 +50,30 @@ func (s Server) Start() error {
 		// /database?saved=true
 		apiGroup.GET("/database", func(c *gin.Context) {
 			c.JSON(200, s.Databases)
+		})
+
+		apiGroup.POST("/dataset", func(c *gin.Context) {
+			var request model.DataSetRequest
+			err := c.ShouldBindJSON(&request)
+			if err != nil {
+				logrus.Error(err)
+				return
+			}
+			spew.Dump(request.Native.Query)
+
+			rows, columns, err := s.sqlClient.RowsAndCols(request.Native.Query)
+			if err != nil {
+				logrus.Error(err)
+				return
+			}
+
+			response := &model.DataSetResponse{
+				Data: &model.Data{
+					Rows: rows,
+					Cols: columns,
+				},
+			}
+			c.JSON(200, response)
 		})
 	}
 

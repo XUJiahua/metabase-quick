@@ -1,7 +1,11 @@
 fmt:
 	go fmt ./...
 run:fmt
-	go run . dataset/ml-latest-small/movies.csv dataset/ml-latest-small/tags.csv
+	PORT=8000 go run . \
+		dataset/sample-dataset/orders.csv \
+		dataset/sample-dataset/products.csv \
+		dataset/sample-dataset/reviews.csv \
+		dataset/sample-dataset/people.csv
 # golang project hot reload, using gin
 # go get github.com/codegangsta/gin
 run-hot:fmt

@@ -3,7 +3,7 @@ module github.com/xujiahua/metabase-quick
 go 1.16
 
 require (
-	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/davecgh/go-spew v1.1.1
 	github.com/dolthub/go-mysql-server v0.9.0
 	github.com/gin-gonic/gin v1.7.1
 	github.com/go-gota/gota v0.10.1
@@ -13,4 +13,6 @@ require (
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/viper v1.7.1
 	gonum.org/v1/gonum v0.9.1 // indirect
+	gorm.io/driver/mysql v1.0.5
+	gorm.io/gorm v1.21.8
 )
