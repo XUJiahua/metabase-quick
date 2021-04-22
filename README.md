@@ -18,10 +18,21 @@ I will build it using Go so that it can easily run on Windows, MacOS, Linux.
 
 No need to setup a standalone database, e.g., MySQL.
 
+### User Interface
+
+Native query page
+
+It's simple and useful enough, so that I only need mock 2 apis. See below.
+
+### Metabase API Mock
+
+1. /api/database
+2. /api/dataset
+
 ## WIP
 
 - [x] import local csv files into local in-memory sql engine tables, and serving, based on project https://github.com/dolthub/go-mysql-server
-- [ ] simplify metabase frontend, do a lot
+- [x] simplify metabase frontend, currently use native query as home page
 - [ ] go server: mock metabase key api logic, the hardest... 
 
 ### TODO
