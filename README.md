@@ -33,7 +33,8 @@ It's simple and useful enough, so that I only need mock 2 apis. See below.
 
 - [x] import local csv files into local in-memory sql engine tables, and serving, based on project https://github.com/dolthub/go-mysql-server
 - [x] simplify metabase frontend, currently use native query as home page
-- [ ] go server: mock metabase key api logic, the hardest... 
+- [x] go server: mock metabase key api logic
+- [ ] more metabase api support, so that reuse more metabase frontend
 
 ### TODO
 
