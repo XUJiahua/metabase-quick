@@ -38,6 +38,7 @@ var cfgFile string
 var sqlServerAddr string
 var hasHeader bool
 var verbose bool
+var dev bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -81,7 +82,7 @@ var rootCmd = &cobra.Command{
 			Tables:   tables,
 		}, verbose, client)
 		handleErr(err)
-		handleErr(server.Start())
+		handleErr(server.Start(dev))
 	},
 }
 
@@ -110,7 +111,8 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVarP(&sqlServerAddr, "sqlServerAddr", "s", "localhost:3306", "the address sql server will listen")
 	rootCmd.PersistentFlags().BoolVarP(&hasHeader, "hasHeader", "i", true, "indicate if csv has header row")
-	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", true, "show verbose logs")
+	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "show verbose logs")
+	rootCmd.PersistentFlags().BoolVarP(&dev, "dev", "d", false, "dev mode, reverse proxy metabase:3000")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.

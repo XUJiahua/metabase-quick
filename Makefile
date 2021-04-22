@@ -6,6 +6,12 @@ run:fmt
 		dataset/sample-dataset/products.csv \
 		dataset/sample-dataset/reviews.csv \
 		dataset/sample-dataset/people.csv
+dev:fmt
+	PORT=8000 go run . --dev \
+		dataset/sample-dataset/orders.csv \
+		dataset/sample-dataset/products.csv \
+		dataset/sample-dataset/reviews.csv \
+		dataset/sample-dataset/people.csv
 # golang project hot reload, using gin
 # go get github.com/codegangsta/gin
 run-hot:fmt

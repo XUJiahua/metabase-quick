@@ -1,15 +1,17 @@
 package metabase
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/davecgh/go-spew/spew"
-	"github.com/gin-gonic/gin"
+	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 	"github.com/xujiahua/metabase-quick/pkg/metabase/model"
 	"github.com/xujiahua/metabase-quick/pkg/sqlclient"
 	"net/http"
 	"net/http/httputil"
 	"os"
+	"time"
 )
 
 type Metadata struct {
@@ -41,58 +43,72 @@ func New(metadata *Metadata, verbose bool, client *sqlclient.Client) (*Server, e
 	}, nil
 }
 
-func (s Server) Start() error {
-	router := gin.Default()
-	apiGroup := router.Group("/api")
-	//const contentType = "application/json;charset=utf-8"
-	{
-		// /database?include=tables
-		// /database?saved=true
-		apiGroup.GET("/database", func(c *gin.Context) {
-			c.JSON(200, s.Databases)
-		})
-
-		apiGroup.POST("/dataset", func(c *gin.Context) {
-			var request model.DataSetRequest
-			err := c.ShouldBindJSON(&request)
-			if err != nil {
-				logrus.Error(err)
-				return
-			}
-			spew.Dump(request.Native.Query)
-
-			rows, columns, err := s.sqlClient.Query(request.Native.Query)
-			if err != nil {
-				logrus.Error(err)
-				return
-			}
-
-			response := &model.DataSetResponse{
-				Data: &model.Data{
-					Rows: rows,
-					Cols: columns,
-				},
-			}
-			c.JSON(200, response)
-		})
-	}
-
-	// reverse proxy to metabase server
-	router.NoRoute(ReverseProxy())
-	port, _ := os.LookupEnv("PORT")
-	return router.Run(fmt.Sprintf(":%s", port))
+func JSON(w http.ResponseWriter, code int, obj interface{}) {
+	w.WriteHeader(code)
+	_ = json.NewEncoder(w).Encode(obj)
 }
 
-// debug mode, direct to metabase backend
-func ReverseProxy() gin.HandlerFunc {
-	target := "localhost:3000"
+func (s Server) Start(dev bool) error {
+	r := mux.NewRouter()
 
-	return func(c *gin.Context) {
+	api := r.PathPrefix("/api").Subrouter()
+	// /database?include=tables
+	// /database?saved=true
+	api.HandleFunc("/database", func(w http.ResponseWriter, r *http.Request) {
+		JSON(w, 200, s.Databases)
+	})
+	api.HandleFunc("/dataset", func(w http.ResponseWriter, r *http.Request) {
+		var request model.DataSetRequest
+		err := json.NewDecoder(r.Body).Decode(&request)
+		if err != nil {
+			logrus.Error(err)
+			return
+		}
+		spew.Dump(request.Native.Query)
+
+		rows, columns, err := s.sqlClient.Query(request.Native.Query)
+		if err != nil {
+			logrus.Error(err)
+			return
+		}
+
+		response := &model.DataSetResponse{
+			Data: &model.Data{
+				Rows: rows,
+				Cols: columns,
+			},
+		}
+		JSON(w, 200, response)
+	})
+
+	if dev {
+		// reverse proxy to metabase server
+		r.PathPrefix("/").HandlerFunc(ReverseProxy("localhost:3000"))
+	} else {
+		r.PathPrefix("/").Handler(http.StripPrefix("/", http.FileServer(http.Dir("./assets"))))
+	}
+
+	port, _ := os.LookupEnv("PORT")
+	srv := &http.Server{
+		Addr: fmt.Sprintf(":%s", port),
+		// Good practice to set timeouts to avoid Slowloris attacks.
+		WriteTimeout: time.Second * 15,
+		ReadTimeout:  time.Second * 15,
+		IdleTimeout:  time.Second * 60,
+		Handler:      r, // Pass our instance of gorilla/mux in.
+	}
+
+	return srv.ListenAndServe()
+}
+
+// ReverseProxy debug mode, direct to metabase backend
+func ReverseProxy(target string) http.HandlerFunc {
+	return func(writer http.ResponseWriter, request *http.Request) {
 		director := func(req *http.Request) {
 			req.URL.Scheme = "http"
 			req.URL.Host = target
 		}
 		proxy := &httputil.ReverseProxy{Director: director}
-		proxy.ServeHTTP(c.Writer, c.Request)
+		proxy.ServeHTTP(writer, request)
 	}
 }
