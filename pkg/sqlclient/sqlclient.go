@@ -7,6 +7,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/xujiahua/metabase-quick/pkg/metabase/model"
 	"reflect"
+	"strings"
 )
 
 type Client struct {
@@ -42,7 +43,7 @@ func (c Client) Query(query string) ([][]interface{}, []*model.Column, error) {
 	for _, columnType := range columnTypes {
 		columns = append(columns, &model.Column{
 			Name:        columnType.Name(),
-			DisplayName: columnType.Name(),
+			DisplayName: strings.ToUpper(columnType.Name()),
 			BaseType:    toMetabaseDataType(columnType.DatabaseTypeName()),
 			Source:      "native",
 		})
