@@ -85,7 +85,8 @@ func (s Server) Start(dev bool) error {
 		// reverse proxy to metabase server
 		r.PathPrefix("/").HandlerFunc(ReverseProxy("localhost:3000"))
 	} else {
-		r.PathPrefix("/").Handler(http.StripPrefix("/", http.FileServer(http.Dir("./assets"))))
+		// TODO: refresh on frontend generated url, 404
+		r.PathPrefix("/").Handler(http.StripPrefix("/", http.FileServer(http.Dir("./frontend_client"))))
 	}
 
 	port, _ := os.LookupEnv("PORT")

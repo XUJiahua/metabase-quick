@@ -2,7 +2,6 @@ fmt:
 	go fmt ./...
 run:fmt
 	PORT=8000 go run . \
-		dataset/sample-dataset/orders.csv \
 		dataset/sample-dataset/products.csv \
 		dataset/sample-dataset/reviews.csv \
 		dataset/sample-dataset/people.csv
