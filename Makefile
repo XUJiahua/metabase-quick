@@ -26,6 +26,10 @@ dev:fmt
 sqlClient:
 	mysql -h 127.0.0.1 -u root
 
+build_frontend:
+	cd metabase && yarn build
+cp:
+	cp metabase/resources/frontend_client pkg/metabase/frontend_client
 build:
 	go build
 build-win:
