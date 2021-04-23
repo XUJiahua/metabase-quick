@@ -23,6 +23,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/phayes/freeport"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/xujiahua/metabase-quick/pkg/metabase"
@@ -35,7 +36,8 @@ import (
 )
 
 var cfgFile string
-var sqlServerAddr string
+var webServerPort int
+var sqlServerPort int
 var hasHeader bool
 var verbose bool
 var dev bool
@@ -61,6 +63,13 @@ var rootCmd = &cobra.Command{
 			return
 		}
 
+		var err error
+		if sqlServerPort == 0 {
+			sqlServerPort, err = freeport.GetFreePort()
+			handleErr(err)
+		}
+		sqlServerAddr := fmt.Sprintf("127.0.0.1:%d", sqlServerPort)
+
 		// start built in sql server
 		s, err := sqldb.New(sqlServerAddr, defaultDBUser, defaultDBPass, defaultDBName)
 		handleErr(err)
@@ -73,6 +82,10 @@ var rootCmd = &cobra.Command{
 			err := s.Start()
 			handleErr(err)
 		}()
+
+		fmt.Println("You can visit database engine via below command:")
+		fmt.Printf("mysql --host=127.0.0.1 --port=%d %s -u %s\n", sqlServerPort, defaultDBName, defaultDBUser)
+		fmt.Println()
 
 		// create sql client
 		client, err := sqlclient.New(sqlServerAddr, defaultDBUser, defaultDBPass, defaultDBName)
@@ -108,7 +121,8 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
-	rootCmd.PersistentFlags().StringVarP(&sqlServerAddr, "sqlServerAddr", "s", "localhost:3306", "the address sql server will listen")
+	rootCmd.PersistentFlags().IntVarP(&sqlServerPort, "sqlServerPort", "s", 0, "will use free open port if you don't specify")
+	rootCmd.PersistentFlags().IntVarP(&webServerPort, "webServerPort", "w", 0, "will use free open port if you don't specify")
 	rootCmd.PersistentFlags().BoolVarP(&hasHeader, "hasHeader", "i", true, "indicate if csv has header row")
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "show verbose logs")
 	rootCmd.PersistentFlags().BoolVarP(&dev, "dev", "d", false, "dev mode, reverse proxy metabase:3000")
