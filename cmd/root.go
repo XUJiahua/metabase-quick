@@ -40,6 +40,10 @@ var hasHeader bool
 var verbose bool
 var dev bool
 
+const defaultDBName = "default"
+const defaultDBUser = "root"
+const defaultDBPass = ""
+
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "metabase-quick",
@@ -48,6 +52,8 @@ var rootCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		if verbose {
 			logrus.SetLevel(logrus.DebugLevel)
+		} else {
+			logrus.SetLevel(logrus.InfoLevel)
 		}
 
 		if len(args) == 0 {
@@ -55,8 +61,8 @@ var rootCmd = &cobra.Command{
 			return
 		}
 
-		// start sql server
-		s, err := sqldb.New(sqlServerAddr)
+		// start built in sql server
+		s, err := sqldb.New(sqlServerAddr, defaultDBUser, defaultDBPass, defaultDBName)
 		handleErr(err)
 
 		for _, filename := range args {
@@ -69,7 +75,7 @@ var rootCmd = &cobra.Command{
 		}()
 
 		// create sql client
-		client, err := sqlclient.New("127.0.0.1:3306", "root", "", "default")
+		client, err := sqlclient.New(sqlServerAddr, defaultDBUser, defaultDBPass, defaultDBName)
 		handleErr(err)
 
 		// start metabase mock server

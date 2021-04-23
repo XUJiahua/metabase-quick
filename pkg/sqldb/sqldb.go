@@ -22,20 +22,12 @@ type Server struct {
 	*server.Server
 }
 
-const defaultDBName = "default"
-const defaultDBUser = "root"
-const defaultDBPass = ""
-const defaultDBAddr = "localhost:3306"
-
-func New(addr string) (*Server, error) {
+func New(addr, defaultDBUser, defaultDBPass, defaultDBName string) (*Server, error) {
 	defaultDB := memory.NewDatabase(defaultDBName)
 
 	engine := sqle.NewDefault()
 	engine.AddDatabase(defaultDB)
 
-	if addr == "" {
-		addr = defaultDBAddr
-	}
 	config := server.Config{
 		Protocol: "tcp",
 		Address:  addr,
