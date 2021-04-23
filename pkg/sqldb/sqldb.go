@@ -12,6 +12,7 @@ import (
 	"github.com/xujiahua/metabase-quick/pkg/util"
 	"os"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -20,6 +21,7 @@ type Server struct {
 	DefaultDB *memory.Database
 	// internal server
 	*server.Server
+	mu sync.Mutex
 }
 
 func New(addr, defaultDBUser, defaultDBPass, defaultDBName string) (*Server, error) {
@@ -44,6 +46,7 @@ func New(addr, defaultDBUser, defaultDBPass, defaultDBName string) (*Server, err
 	}, nil
 }
 
+// TODO: support more types, such as timestamp
 var typeMapping = map[series.Type]sql.Type{
 	series.String: sql.Text,
 	series.Int:    sql.Int64,
@@ -57,8 +60,16 @@ func simplifyName(name string) string {
 }
 
 func (s *Server) Import(filenames []string, hasHeader bool) error {
+	res := make(chan error, len(filenames))
 	for _, filename := range filenames {
-		err := s.ImportTable(filename, hasHeader)
+		logrus.Debugf("loading file %s", filename)
+		go func(filename string) {
+			res <- s.ImportTable(filename, hasHeader)
+		}(filename)
+	}
+
+	for i := 0; i < len(filenames); i++ {
+		err := <-res
 		if err != nil {
 			return err
 		}
@@ -91,10 +102,7 @@ func (s *Server) ImportTable(filename string, hasHeader bool) error {
 			Source:   tableName,
 		})
 	}
-	// attach to default db
 	table := memory.NewTable(tableName, schema)
-	// TODO: maybe duplicate table name
-	s.DefaultDB.AddTable(tableName, table)
 
 	ctx := sql.NewEmptyContext()
 	//inserter := table.Inserter(ctx)
@@ -111,6 +119,12 @@ func (s *Server) ImportTable(filename string, hasHeader bool) error {
 			return err
 		}
 	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	// attach to default db
+	// TODO: maybe duplicate table name
+	s.DefaultDB.AddTable(tableName, table)
 
 	return nil
 }
