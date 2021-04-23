@@ -19,26 +19,20 @@ import (
 //go:embed frontend_client
 var staticFiles embed.FS
 
-type Metadata struct {
-	Database string
-	Tables   []string
-}
-
 // Server mock metabase server
 type Server struct {
 	Databases []*model.Database
 	sqlClient *sqlclient.Client
 }
 
-func New(metadata *Metadata, verbose bool, client *sqlclient.Client) (*Server, error) {
-	if verbose {
-		spew.Dump(metadata)
+func New(client *sqlclient.Client) (*Server, error) {
+	tables, err := client.GetTables()
+	if err != nil {
+		return nil, err
 	}
 
-	// show databases;
-	// show tables;
-	database := model.NewDatabase(metadata.Database, 1)
-	for i, table := range metadata.Tables {
+	database := model.NewDatabase(client.DBName, 1)
+	for i, table := range tables {
 		database.AddTable(table, i)
 	}
 

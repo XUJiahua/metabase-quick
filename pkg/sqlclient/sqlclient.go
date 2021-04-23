@@ -3,6 +3,7 @@ package sqlclient
 import (
 	"database/sql"
 	"database/sql/driver"
+	"errors"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/xujiahua/metabase-quick/pkg/metabase/model"
@@ -11,7 +12,8 @@ import (
 )
 
 type Client struct {
-	db *sql.DB
+	db     *sql.DB
+	DBName string
 }
 
 func New(dbAddr, user, pass, dbName string) (*Client, error) {
@@ -24,7 +26,8 @@ func New(dbAddr, user, pass, dbName string) (*Client, error) {
 	}
 
 	return &Client{
-		db: db,
+		db:     db,
+		DBName: dbName,
 	}, nil
 }
 
@@ -84,4 +87,25 @@ func (c Client) Query(query string) ([][]interface{}, []*model.Column, error) {
 	}
 
 	return _rows, columns, nil
+}
+
+func (c Client) GetTables() ([]string, error) {
+	rows, cols, err := c.Query("show tables;")
+	if err != nil {
+		return nil, err
+	}
+
+	if len(cols) != 1 {
+		return nil, errors.New("unexpect to happen")
+	}
+
+	var tables []string
+	for _, row := range rows {
+		if table, ok := row[0].(string); ok {
+			tables = append(tables, table)
+		} else {
+			return nil, errors.New("unexpect to happen")
+		}
+	}
+	return tables, nil
 }

@@ -59,13 +59,9 @@ var rootCmd = &cobra.Command{
 		s, err := sqldb.New(sqlServerAddr)
 		handleErr(err)
 
-		var tables []string
 		for _, filename := range args {
-			// TODO: main in args
-			tableName, err := s.ImportTable(filename, hasHeader)
+			err := s.ImportTable(filename, hasHeader)
 			handleErr(err)
-
-			tables = append(tables, tableName)
 		}
 		go func() {
 			err := s.Start()
@@ -77,10 +73,7 @@ var rootCmd = &cobra.Command{
 		handleErr(err)
 
 		// start metabase mock server
-		server, err := metabase.New(&metabase.Metadata{
-			Database: s.DefaultDB.Name(),
-			Tables:   tables,
-		}, verbose, client)
+		server, err := metabase.New(client)
 		handleErr(err)
 		handleErr(server.Start(dev))
 	},

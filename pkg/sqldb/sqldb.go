@@ -64,7 +64,7 @@ func simplifyName(name string) string {
 	return strings.ReplaceAll(name, " ", "_")
 }
 
-func (s *Server) ImportTable(filename string, hasHeader bool) (string, error) {
+func (s *Server) ImportTable(filename string, hasHeader bool) error {
 	begin := time.Now()
 	defer func() {
 		logrus.Infof("load file %s in %v seconds", filename, time.Now().Sub(begin).Seconds())
@@ -73,7 +73,7 @@ func (s *Server) ImportTable(filename string, hasHeader bool) (string, error) {
 
 	file, err := os.Open(filename)
 	if err != nil {
-		return "", err
+		return err
 	}
 	defer file.Close()
 
@@ -105,9 +105,9 @@ func (s *Server) ImportTable(filename string, hasHeader bool) (string, error) {
 		//err = inserter.Insert(ctx, sql.NewRow(row...))
 		err = table.Insert(ctx, sql.NewRow(row...))
 		if err != nil {
-			return "", err
+			return err
 		}
 	}
 
-	return tableName, nil
+	return nil
 }
