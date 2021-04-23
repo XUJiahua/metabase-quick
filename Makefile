@@ -11,6 +11,8 @@ dev:fmt
 		dataset/sample-dataset/products.csv \
 		dataset/sample-dataset/reviews.csv \
 		dataset/sample-dataset/people.csv
+git_submodule:
+	git submodule update --init
 build_frontend:
 	cd metabase && yarn build
 cp:
