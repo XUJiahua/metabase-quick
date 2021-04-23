@@ -23,16 +23,19 @@ package cmd
 
 import (
 	"fmt"
+	homedir "github.com/mitchellh/go-homedir"
 	"github.com/phayes/freeport"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"github.com/xujiahua/metabase-quick/pkg/metabase"
 	"github.com/xujiahua/metabase-quick/pkg/sqlclient"
 	"github.com/xujiahua/metabase-quick/pkg/sqldb"
 	"os"
-
-	homedir "github.com/mitchellh/go-homedir"
-	"github.com/spf13/viper"
+	"os/exec"
+	"os/signal"
+	"runtime"
+	"syscall"
 )
 
 var cfgFile string
@@ -69,33 +72,100 @@ var rootCmd = &cobra.Command{
 			handleErr(err)
 		}
 		sqlServerAddr := fmt.Sprintf("127.0.0.1:%d", sqlServerPort)
-
-		// start built in sql server
-		s, err := sqldb.New(sqlServerAddr, defaultDBUser, defaultDBPass, defaultDBName)
-		handleErr(err)
-
-		for _, filename := range args {
-			err := s.ImportTable(filename, hasHeader)
+		if webServerPort == 0 {
+			webServerPort, err = freeport.GetFreePort()
 			handleErr(err)
 		}
-		go func() {
-			err := s.Start()
-			handleErr(err)
-		}()
+		webServerAddr := fmt.Sprintf("127.0.0.1:%d", webServerPort)
 
-		fmt.Println("You can visit database engine via below command:")
-		fmt.Printf("mysql --host=127.0.0.1 --port=%d %s -u %s\n", sqlServerPort, defaultDBName, defaultDBUser)
-		fmt.Println()
+		shutdownSignal := make(chan struct{}, 1)
+		done := make(chan struct{}, 2)
+
+		// start built in sql server
+		sqlServer, err := sqldb.New(sqlServerAddr, defaultDBUser, defaultDBPass, defaultDBName)
+		handleErr(err)
+
+		err = sqlServer.Import(args, hasHeader)
+		handleErr(err)
+
+		go func() {
+			fmt.Println("You can visit database engine via below command:")
+			fmt.Printf("mysql --host=127.0.0.1 --port=%d %s -u %s\n", sqlServerPort, defaultDBName, defaultDBUser)
+			fmt.Println()
+
+			go func() {
+				<-shutdownSignal
+				logrus.Debug("shutting down sql server...")
+				_ = sqlServer.Close()
+			}()
+
+			logrus.Debug("starting sql server")
+			handleErr(sqlServer.Start())
+			logrus.Debug("sql server is closed")
+			done <- struct{}{}
+		}()
 
 		// create sql client
 		client, err := sqlclient.New(sqlServerAddr, defaultDBUser, defaultDBPass, defaultDBName)
 		handleErr(err)
 
 		// start metabase mock server
-		server, err := metabase.New(client)
+		webServer, err := metabase.New(client, webServerAddr, dev)
 		handleErr(err)
-		handleErr(server.Start(dev))
+
+		go func() {
+			fmt.Printf("open http://localhost:%d\n", webServerPort)
+			fmt.Println()
+
+			go func() {
+				<-shutdownSignal
+				logrus.Debug("shutting down web server...")
+				_ = webServer.Close()
+			}()
+
+			logrus.Debug("starting web server")
+			handleErr(webServer.Start())
+			logrus.Debug("web server is closed")
+			done <- struct{}{}
+		}()
+
+		openBrowser(fmt.Sprintf("http://localhost:%d", webServerPort))
+
+		gracefulShutdown(shutdownSignal, done)
 	},
+}
+
+func gracefulShutdown(shutdownSignal chan struct{}, done chan struct{}) {
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+	sig := <-sigs
+	fmt.Println()
+	fmt.Println(sig)
+	close(shutdownSignal)
+
+	// wait web server finish
+	<-done
+	<-done
+}
+
+// https://gist.github.com/hyg/9c4afcd91fe24316cbf0
+func openBrowser(url string) {
+	var err error
+
+	switch runtime.GOOS {
+	case "linux":
+		err = exec.Command("xdg-open", url).Start()
+	case "windows":
+		err = exec.Command("rundll32", "url.dll,FileProtocolHandler", url).Start()
+	case "darwin":
+		err = exec.Command("open", url).Start()
+	default:
+		err = fmt.Errorf("unsupported platform")
+	}
+	if err != nil {
+		logrus.Fatal(err)
+	}
+
 }
 
 func handleErr(err error) {

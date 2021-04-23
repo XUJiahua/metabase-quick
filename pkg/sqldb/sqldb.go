@@ -56,6 +56,17 @@ func simplifyName(name string) string {
 	return strings.ReplaceAll(name, " ", "_")
 }
 
+func (s *Server) Import(filenames []string, hasHeader bool) error {
+	for _, filename := range filenames {
+		err := s.ImportTable(filename, hasHeader)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (s *Server) ImportTable(filename string, hasHeader bool) error {
 	begin := time.Now()
 	defer func() {

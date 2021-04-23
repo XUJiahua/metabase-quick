@@ -1,24 +1,24 @@
 fmt:
 	go fmt ./...
 run:fmt
-	PORT=8000 go run . \
+	go run . \
 		dataset/sample-dataset/products.csv \
 		dataset/sample-dataset/reviews.csv \
 		dataset/sample-dataset/people.csv
 dev:fmt
-	PORT=8000 go run . --dev \
+	go run . -d -v \
 		dataset/sample-dataset/orders.csv \
 		dataset/sample-dataset/products.csv \
 		dataset/sample-dataset/reviews.csv \
 		dataset/sample-dataset/people.csv
 # golang project hot reload, using gin
 # go get github.com/codegangsta/gin
-run-hot:fmt
-	gin -p 8000 run main.go \
-		dataset/sample-dataset/orders.csv \
-		dataset/sample-dataset/products.csv \
-		dataset/sample-dataset/reviews.csv \
-		dataset/sample-dataset/people.csv
+#run-hot:fmt
+#	gin -p 8000 run main.go \
+#		dataset/sample-dataset/orders.csv \
+#		dataset/sample-dataset/products.csv \
+#		dataset/sample-dataset/reviews.csv \
+#		dataset/sample-dataset/people.csv
 # use default;
 # show tables;
 # join test

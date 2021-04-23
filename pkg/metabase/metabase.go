@@ -1,9 +1,9 @@
 package metabase
 
 import (
+	"context"
 	"embed"
 	"encoding/json"
-	"fmt"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
@@ -12,7 +12,6 @@ import (
 	"io/fs"
 	"net/http"
 	"net/http/httputil"
-	"os"
 	"time"
 )
 
@@ -23,9 +22,10 @@ var staticFiles embed.FS
 type Server struct {
 	Databases []*model.Database
 	sqlClient *sqlclient.Client
+	srv       *http.Server
 }
 
-func New(client *sqlclient.Client) (*Server, error) {
+func New(client *sqlclient.Client, addr string, dev bool) (*Server, error) {
 	tables, err := client.GetTables()
 	if err != nil {
 		return nil, err
@@ -36,20 +36,12 @@ func New(client *sqlclient.Client) (*Server, error) {
 		database.AddTable(table, i)
 	}
 
-	return &Server{
+	s := &Server{
 		Databases: []*model.Database{database},
 		sqlClient: client,
-	}, nil
-}
+	}
 
-func JSON(w http.ResponseWriter, code int, obj interface{}) {
-	w.WriteHeader(code)
-	_ = json.NewEncoder(w).Encode(obj)
-}
-
-func (s Server) Start(dev bool) error {
 	r := mux.NewRouter()
-
 	api := r.PathPrefix("/api").Subrouter()
 	// /database?include=tables
 	// /database?saved=true
@@ -93,17 +85,32 @@ func (s Server) Start(dev bool) error {
 		r.PathPrefix("/").Handler(http.FileServer(http.FS(staticFiles)))
 	}
 
-	port, _ := os.LookupEnv("PORT")
-	srv := &http.Server{
-		Addr: fmt.Sprintf(":%s", port),
+	s.srv = &http.Server{
+		Addr: addr,
 		// Good practice to set timeouts to avoid Slowloris attacks.
 		WriteTimeout: time.Second * 15,
 		ReadTimeout:  time.Second * 15,
 		IdleTimeout:  time.Second * 60,
 		Handler:      r, // Pass our instance of gorilla/mux in.
 	}
+	return s, nil
+}
 
-	return srv.ListenAndServe()
+func JSON(w http.ResponseWriter, code int, obj interface{}) {
+	w.WriteHeader(code)
+	_ = json.NewEncoder(w).Encode(obj)
+}
+
+func (s Server) Start() error {
+	if err := s.srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		return err
+	}
+	return nil
+}
+
+func (s Server) Close() error {
+	ctx := context.Background()
+	return s.srv.Shutdown(ctx)
 }
 
 // ReverseProxy debug mode, direct to metabase backend
