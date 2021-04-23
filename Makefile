@@ -13,11 +13,20 @@ dev:fmt
 		dataset/sample-dataset/people.csv
 git_submodule:
 	git submodule update --init
+
+clean:
+	git clean -f -x -d
 build_frontend:
-	cd metabase && yarn build
-cp:
+	cd metabase && git clean -f -x -d && yarn build
+cp_frontend:build_frontend
 	cp -r metabase/resources/frontend_client/* pkg/metabase/frontend_client
-build:fmt
-	go build
-build-win:
-	env GOOS=windows GOARCH=amd64 go build
+build_dir:
+	mkdir -p build
+build_mac:
+	env GOOS=darwin GOARCH=amd64 go build -o build/metabase-quick-darwin
+build_win:
+	env GOOS=windows GOARCH=amd64 go build -o build/metabase-quick-win.exe
+build_linux:
+	env GOOS=linux GOARCH=amd64 go build -o build/metabase-quick-linux
+build:clean cp_frontend build_dir build_mac build_win build_linux
+	echo 'done'
