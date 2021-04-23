@@ -4,7 +4,7 @@ import (
 	"context"
 	"embed"
 	"encoding/json"
-	"github.com/davecgh/go-spew/spew"
+	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 	"github.com/xujiahua/metabase-quick/pkg/metabase/model"
@@ -55,7 +55,7 @@ func New(client *sqlclient.Client, addr string, dev bool) (*Server, error) {
 			logrus.Error(err)
 			return
 		}
-		spew.Dump(request.Native.Query)
+		fmt.Printf("incoming query: %s\n", request.Native.Query)
 
 		response := &model.DataSetResponse{}
 		rows, columns, err := s.sqlClient.Query(request.Native.Query)
