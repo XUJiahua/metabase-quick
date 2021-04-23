@@ -57,18 +57,22 @@ func New(client *sqlclient.Client, addr string, dev bool) (*Server, error) {
 		}
 		spew.Dump(request.Native.Query)
 
+		response := &model.DataSetResponse{}
 		rows, columns, err := s.sqlClient.Query(request.Native.Query)
 		if err != nil {
 			logrus.Error(err)
-			return
-		}
-
-		response := &model.DataSetResponse{
-			Data: &model.Data{
+			response.Error = err.Error()
+			response.Data = &model.Data{
+				Rows: [][]interface{}{},
+				Cols: []*model.Column{},
+			}
+		} else {
+			response.Data = &model.Data{
 				Rows: rows,
 				Cols: columns,
-			},
+			}
 		}
+
 		JSON(w, 200, response)
 	})
 

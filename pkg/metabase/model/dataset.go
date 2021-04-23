@@ -45,4 +45,5 @@ type DataSetResponse struct {
 	Context              string      `json:"context"`
 	RowCount             int         `json:"row_count"`
 	RunningTime          int         `json:"running_time"`
+	Error                string      `json:"error"`
 }
