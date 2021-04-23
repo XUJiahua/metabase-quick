@@ -1,6 +1,8 @@
 
 ## metabase-quick
 
+[中文说明](https://xujiahua.github.io/posts/metabase-quick-71d491f9-972e-4305-9f93-1af388b5ca9b/)
+
 Purpose: Visualize local csv files via Metabase, without user login and permission check, without database setup.
 Use it and forget it...
 
@@ -94,20 +96,6 @@ go-server:8000
 
 ## Build
 
-in Metabase code repo 
-
 ```
-yarn build
+make build
 ```
-
-copy whole resources/frontend_client into pkg/metabase/frontend_client (metabase-quick code repo)
-
-
-replace pkg/metabase/frontend_client/index.html with index.html (metabase backend generated)
-
-Build metabase-quick (package frontend_client folder into go binary file)
-
-```
-go build
-```
-
