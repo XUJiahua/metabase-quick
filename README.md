@@ -44,6 +44,7 @@ It's simple and useful enough, so that I only need mock 2 apis. See below.
 ## Build
 
 ```
+make git_submodule
 make build
 ```
 
