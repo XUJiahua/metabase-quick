@@ -37,12 +37,15 @@ It's simple and useful enough, so that I only need mock 2 apis. See below.
 - [x] simplify metabase frontend, currently use native query as home page
 - [x] go server: mock metabase key api logic
 - [ ] more metabase api support, so that reuse more metabase frontend
-
-### TODO
-
 - [ ] infer more column type， now based on project https://github.com/go-gota/gota with limited column types supported
 - [ ] db engine for handling bigger dataset
 
+
+## Build
+
+```
+make build
+```
 
 ## Dev Setup
 
@@ -71,31 +74,11 @@ metabase-server:3000 -> webpack-server:8080
 ### dev setup
 
 ```
-func ReverseProxy() gin.HandlerFunc {
-	target := "localhost:3000"
-
-	return func(c *gin.Context) {
-		director := func(req *http.Request) {
-			req.URL.Scheme = "http"
-			req.URL.Host = target
-		}
-		proxy := &httputil.ReverseProxy{Director: director}
-		proxy.ServeHTTP(c.Writer, c.Request)
-	}
-}
-
-// default route
-router.NoRoute(ReverseProxy())
+make dev
 ```
 
 visit frontend:
-go-server:8000 -> metabase-server:3000 
+go-server:8000 -> metabase-server:3000
 
 visit backend:
 go-server:8000
-
-## Build
-
-```
-make build
-```
