@@ -10,6 +10,17 @@ Metabase is wonderful! It helps me a lot. :)
 
 But I have to do a lot of work for setting up Metabase: create account, create database, including import data, if I don't have one at hand. Especially when I just want to do some tiny work of data visualization, it's really a pain.
 
+## Usage
+
+Download metabase-quick from releases
+
+
+```
+./metabase-quick dataset.csv
+```
+
+Metabase UI will be opened in your browser.
+
 ## Design
 
 ### Cross-platform
