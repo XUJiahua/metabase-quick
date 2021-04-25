@@ -6,9 +6,9 @@ import (
 )
 
 func TestNew(t *testing.T) {
-	s, err := New("localhost:3306")
+	s, err := New("localhost:3306", "root", "", "default")
 	assert.Equal(t, nil, err)
-	err = s.ImportTable("/Users/jiahua/goworkshop/metabase-quick/dataset/sample-dataset/orders.csv", true)
+	err = s.ImportTable("/Users/jiahua/goworkshop/metabase-quick/dataset/rb.csv", true)
 	assert.Equal(t, nil, err)
 	err = s.Start()
 	assert.Equal(t, nil, err)

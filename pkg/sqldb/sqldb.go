@@ -93,6 +93,9 @@ func (s *Server) ImportTable(filename string, hasHeader bool) error {
 
 	// schema inferred from dataframe package
 	dataFrame := dataframe.ReadCSV(file, dataframe.HasHeader(hasHeader))
+	if dataFrame.Err != nil {
+		return dataFrame.Err
+	}
 	var schema sql.Schema
 	for _, colName := range dataFrame.Names() {
 		schema = append(schema, &sql.Column{
