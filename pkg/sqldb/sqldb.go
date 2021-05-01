@@ -11,6 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/xujiahua/metabase-quick/pkg/util"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -84,6 +85,7 @@ func (s *Server) ImportTable(filename string, hasHeader bool) error {
 		logrus.Infof("load file %s in %v seconds", filename, time.Now().Sub(begin).Seconds())
 	}()
 	tableName := util.GetFilenameWithExt(filename)
+	ext := filepath.Ext(filename)
 
 	file, err := os.Open(filename)
 	if err != nil {
@@ -91,8 +93,14 @@ func (s *Server) ImportTable(filename string, hasHeader bool) error {
 	}
 	defer file.Close()
 
+	var dataFrame dataframe.DataFrame
+	// infer csv or json from ext, by default, csv
 	// schema inferred from dataframe package
-	dataFrame := dataframe.ReadCSV(file, dataframe.HasHeader(hasHeader))
+	if ext == ".json" {
+		dataFrame = dataframe.ReadJSON(file)
+	} else {
+		dataFrame = dataframe.ReadCSV(file, dataframe.HasHeader(hasHeader))
+	}
 	if dataFrame.Err != nil {
 		return dataFrame.Err
 	}
