@@ -1,6 +1,7 @@
 package sqldb
 
 import (
+	"bufio"
 	sqle "github.com/dolthub/go-mysql-server"
 	"github.com/dolthub/go-mysql-server/auth"
 	"github.com/dolthub/go-mysql-server/memory"
@@ -10,6 +11,7 @@ import (
 	"github.com/go-gota/gota/series"
 	"github.com/sirupsen/logrus"
 	"github.com/xujiahua/metabase-quick/pkg/util"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -79,6 +81,20 @@ func (s *Server) Import(filenames []string, hasHeader bool) error {
 	return nil
 }
 
+func jsonArray(r io.Reader) (io.Reader, error) {
+	scanner := bufio.NewScanner(r)
+	var lines []string
+	for scanner.Scan() {
+		lines = append(lines, scanner.Text())
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	s := "[" + strings.Join(lines, ",") + "]"
+	return strings.NewReader(s), nil
+}
+
 func (s *Server) ImportTable(filename string, hasHeader bool) error {
 	begin := time.Now()
 	defer func() {
@@ -97,12 +113,17 @@ func (s *Server) ImportTable(filename string, hasHeader bool) error {
 	// infer csv or json from ext, by default, csv
 	// schema inferred from dataframe package
 	if ext == ".json" {
-		dataFrame = dataframe.ReadJSON(file)
+		// support json array
+		r, err := jsonArray(file)
+		if err != nil {
+			return err
+		}
+		dataFrame = dataframe.ReadJSON(r)
 	} else {
 		dataFrame = dataframe.ReadCSV(file, dataframe.HasHeader(hasHeader))
 	}
-	if dataFrame.Err != nil {
-		return dataFrame.Err
+	if dataFrame.Error() != nil {
+		return dataFrame.Error()
 	}
 	var schema sql.Schema
 	for _, colName := range dataFrame.Names() {
